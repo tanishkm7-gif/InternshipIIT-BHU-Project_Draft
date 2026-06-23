@@ -1,0 +1,70 @@
+import scipy.io
+mat = scipy.io.loadmat(r"PATH_TO_ONE_PADERBORN_FILE.mat")
+print(mat.keys())
+
+
+import scipy.io
+
+# Load the file
+mat_path = r"PATH_TO_YOUR_PADERBORN_FILE.mat" # Replace with your real path
+mat = scipy.io.loadmat(mat_path)
+
+# Find the dynamic key (e.g., 'N09_M07_F10_K001_1')
+data_keys = [k for k in mat.keys() if not k.startswith('__')]
+main_key = data_keys[0]
+
+# Dig into the structure
+structured_data = mat[main_key]
+
+# 1. Check what the internal fields look like
+print(f"Main structure shape: {structured_data.shape}")
+print(f"Data type of structure: {type(structured_data)}")
+
+# 2. Print field names if it's a structured MATLAB array
+if hasattr(structured_data, 'dtype') and structured_data.dtype.names:
+    print("Internal sub-fields found:", structured_data.dtype.names)
+else:
+    # If it's a multi-dimensional array, let's look at its internal layers
+    print("No explicit text sub-fields. Checking sub-elements...")
+    try:
+        # Paderborn usually stores sensors inside a nested element array
+        # Let's see what is inside the first slot
+        print(f"Layer 1 Shape: {structured_data[0].shape}")
+        print(f"Layer 2 Shape: {structured_data[0][0].shape}")
+    except Exception as e:
+        print("Could not parse layers automatically:", e)
+
+
+import scipy.io
+
+mat_path = r"D:\DATABASEYO\Paderborn\N09_M07_F10_K001_1.mat"
+mat = scipy.io.loadmat(mat_path)
+
+# 1. Get the dynamic filename key
+data_keys = [k for k in mat.keys() if not k.startswith('__')]
+main_key = data_keys[0]
+
+# 2. Access the main struct and the Y array matrix
+structured_data = mat[main_key][0, 0]
+y_matrix = structured_data['Y'] # This has shape (1, 7)
+
+# 3. Test slot 6 (Standard Paderborn vibration channel)
+try:
+    sensor_slot = y_matrix[0, 6] # Row 0, Column 6
+    sensor_name = sensor_slot['Name'][0]
+    raw_signal = sensor_slot['Data'][0].flatten()
+    print(f"SUCCESS AT INDEX 6!")
+    print(f"Sensor Name: {sensor_name}")
+    print(f"Signal Length: {len(raw_signal)} data points")
+except Exception as e:
+    print(f"Index 6 failed, checking Index 0. Error: {e}")
+    try:
+        # Backup: check slot 0 if they reversed the order
+        sensor_slot = y_matrix[0, 0]
+        sensor_name = sensor_slot['Name'][0]
+        raw_signal = sensor_slot['Data'][0].flatten()
+        print(f"SUCCESS AT INDEX 0!")
+        print(f"Sensor Name: {sensor_name}")
+        print(f"Signal Length: {len(raw_signal)} data points")
+    except Exception as e2:
+        print(f"Both channels failed to extract. Error: {e2}")
